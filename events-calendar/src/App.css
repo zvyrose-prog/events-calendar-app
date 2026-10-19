@@ -1,0 +1,430 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #f5f5f5;
+}
+
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  background-color: #d1d0d0;
+  color: rgb(43, 43, 43);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.month-titles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 180px;
+}
+
+.month-titles h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.sub-month-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #3b3b3b;
+  font-weight: normal;
+}
+
+.month-navigation button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.month-navigation button:hover {
+  background-color: #4a4a4a;
+  border-radius: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.view-toggle-btn,
+.settings-btn, 
+.add-artist-btn {
+  background-color: #3f51b5; /* ברירת מחדל כחול נעים */
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap; /* מונע מהטקסט להישבר לשתי שורות כמו שקרה לניהול אומנים */
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+/* צבעים ייחודיים לכל כפתור כדי לשמור על הבחנות ברורות */
+.add-artist-btn {
+  background-color: #2196F3; /* כחול בהיר */
+}
+
+.settings-btn {
+  background-color: #607D8B; /* אפור-כחלחל */
+}
+
+.view-toggle-btn {
+  background-color: #455A64; /* אפור כהה אחיד וברור */
+}
+
+.view-toggle-btn:hover, 
+.settings-btn:hover, 
+.add-artist-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.add-artist-btn {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.calendar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  height: 100%;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  padding: 10px 0;
+  background-color: #ecdfe1;
+  color: #333;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  flex: 1;
+  gap: 2px;
+  background-color: #ddd;
+  border: 2px solid #ddd;
+}
+
+.day-cell {
+  background-color: white;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 5px;
+}
+
+.primary-date {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #222;
+}
+
+.secondary-date {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #888;
+}
+
+.not-current-month {
+  background-color: #f9f9f9;
+}
+
+.not-current-month .primary-date,
+.not-current-month .secondary-date {
+  color: #bbb;
+}
+
+.holiday-text {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+.settings-btn {
+  background-color: #607D8B; /* צבע כחול-אפור אלגנטי שמתאים לכותרת הבהירה */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.artist-list-item { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 10px; 
+  border: 1px solid #aaa; /* מסגרת כהה וברורה יותר */
+  border-radius: 6px; 
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* הצללה קלה */
+}
+
+.event-modal {
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  width: 90% !important;
+  max-width: 750px !important; /* רוחב מרווח ונוח למחשב */
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.artists-squares {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* יוצר בדיוק 2 עמודות שוות ברוחב שלהן */
+  gap: 4px;
+  margin-top: auto; /* דוחף את כל הריבועים תמיד לתחתית המשבצת */
+  width: 100%;
+  padding-top: 5px;
+}
+
+.artist-square {
+  width: 100%;
+  max-width: 100%; /* מונע מהריבוע להימתח הצידה מעבר לגבולות שלו */
+  box-sizing: border-box; /* מבטיח שהמסגרת והריפוד נשארים בתוך הרוחב */
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden; /* חותך טקסט או אלמנטים שחורגים מהריבוע */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.artist-square:hover {
+  transform: scale(1.05); /* הקטנתי קצת את הקפיצה בעכבר כדי שזה לא יחרוג מהמשבצת */
+  z-index: 2; /* מוודא שזה קופץ מעל הריבועים האחרים כומרחפים */
+}
+
+/* עיצוב אחיד ומודרני לכל התיבות הבוחרות (select) בטפסים */
+.event-modal select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: white;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.event-modal select:focus {
+  border-color: #2196F3; /* מסגרת כחולה נקייה כשלוחצים עליה */
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column; /* במסך קטן, השדות ירדו אחד מתחת לשני */
+    gap: 5px;
+  }
+
+  .top-bar {
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 10px;
+  }
+
+  .top-bar h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+
+  .month-navigation {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .month-titles h2 {
+    font-size: 1.2rem;
+  }
+
+  .sub-month-title {
+    font-size: 0.9rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* מחלק את ארבעת הכפתורים ל-2 על 2 או שורה מסודרת */
+    gap: 6px;
+  }
+
+  .view-toggle-btn, 
+  .settings-btn, 
+  .add-artist-btn {
+    width: 100%;
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+
+  /* ביטול שוליים מיותרים כדי למקסם את רוחב הלוח */
+  .calendar-wrapper {
+    padding: 2px;
+  }
+
+  .calendar-header {
+    font-size: 0.75rem;
+    padding: 5px 0;
+  }
+
+  .day-cell {
+    padding: 2px;
+    min-width: 0;
+    /* קריטי: מונע מהמשבצת לגלוש החוצה מרוחב המסך */
+  }
+
+  .dates-header {
+    display: flex;
+    flex-direction: row; /* מסדר את התאריכים בשורה אחת במקום אחד מעל השני */
+    justify-content: space-between; /* מצמיד אחד לימין ואחד לשמאל */
+    align-items: center; /* דואג שיהיו באותו גובה בדיוק */
+    margin-bottom: 2px;
+  }
+
+  .primary-date {
+    font-size: 13px;
+  }
+
+  .secondary-date {
+    font-size: 11px;
+    margin-top: 0; /* מבטל את הרווח העליון שהיה דוחף אותו שורה למטה */
+  }
+
+  .holiday-text {
+    font-size: 0.6rem;
+    text-align: center;
+    /* חיתוך טקסט ארוך עם 3 נקודות כדי שלא ירחיב את העמודה */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .artists-squares {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* שומר על 2 עמודות גם בפלאפון */
+    gap: 2px; /* רווח טיפה יותר קטן בין הבלוקים */
+    width: 100%;
+  }
+
+  .artist-square {
+    width: 100%;
+    height: 18px; /* טיפה יותר נמוך כדי שיכנסו כמה בלוקים במסך קטן */
+    font-size: 10px; /* טקסט יותר קטן כדי שהסימן שאלה או השם לא יחתכו */
+    border-radius: 3px;
+  }
+}
+
+/* --- עיצוב חלון קופץ (Modal) --- */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: white; padding: 25px; border-radius: 8px;
+  width: 90%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.modal-content h3 { margin: 0 0 10px 0; color: #333; text-align: center; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 0.9rem; font-weight: bold; color: #555; }
+.form-group input[type="text"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.color-picker { width: 100%; height: 40px; padding: 2px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; }
+.modal-actions { display: flex; justify-content: space-between; gap: 15px; margin-top: 15px; }
+.save-btn { background-color: #4CAF50; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; }
+.cancel-btn { background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; }
+.save-btn:hover { background-color: #45a049; }
+.cancel-btn:hover { background-color: #d32f2f; }
