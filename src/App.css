@@ -263,14 +263,19 @@ textarea {
 
 .artist-square {
   width: 100%;
+  max-width: 100%; /* מונע מהריבוע להימתח הצידה מעבר לגבולות שלו */
+  box-sizing: border-box; /* מבטיח שהמסגרת והריפוד נשארים בתוך הרוחב */
   height: 22px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  font-weight: 700; /* עובי טקסט חזק ובולט */
+  font-weight: 700;
   cursor: pointer;
+  overflow: hidden; /* חותך טקסט או אלמנטים שחורגים מהריבוע */
+  text-overflow: ellipsis;
+  white-space: nowrap;
   transition: all 0.2s;
 }
 

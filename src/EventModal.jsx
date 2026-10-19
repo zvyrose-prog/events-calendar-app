@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function EventModal({ isOpen, onClose, onSave, selectedDate, prefilledArtist }) {
   // כל השדות מהאפיון שלך
@@ -9,12 +9,11 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
   const [phone2, setPhone2] = useState("");
   const [photographer, setPhotographer] = useState("");
   const [videoEditor, setVideoEditor] = useState("");
-  
+
   // שדות בוליאניים (כן/לא)
   const [hasSongs, setHasSongs] = useState(false);
   const [songList, setSongList] = useState("");
   const [materialCollected, setMaterialCollected] = useState(false);
-  // שדה האם שולמה מקדמה
   const [hasAdvancePaid, setHasAdvancePaid] = useState(false);
 
   // מאגר עורכי וידאו קבועים
@@ -23,7 +22,26 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
     { id: '2', name: 'מיכל עורכת' }
   ]);
 
-  // אם החלון לא אמור להיות פתוח, אל תצייר כלום
+  // טיפול בכפתור חזרה (Back) באנדרואיד לסגירת החלון בלבד
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (isOpen) {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      window.history.pushState(null, '', window.location.href);
+      window.addEventListener('popstate', handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isOpen, onClose]);
+
+  // תנאי העצירה יושב תמיד אחרי ال-useEffect!
   if (!isOpen) return null;
 
   // עיצוב התאריך שנבחר כדי להציג אותו בכותרת החלון
@@ -46,7 +64,8 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
       videoEditor,
       hasSongs,
       songList: hasSongs ? songList : "", // שומר את השירים רק אם סומן "כן"
-      materialCollected
+      materialCollected,
+      hasAdvancePaid
     };
 
     onSave(eventData);
@@ -54,18 +73,19 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
     // איפוס הטופס לפעם הבאה
     setGroomName(""); setBrideName(""); setVenue(""); setPhone1(""); setPhone2("");
     setPhotographer(""); setVideoEditor(""); setHasSongs(false); setSongList(""); setMaterialCollected(false);
-  };
+    setHasAdvancePaid(false);
+  }; // <--- כאן הפונקציה handleSaveClick נסגרת סוף סוף כמו שצריך!
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content event-modal" onClick={(e) => e.stopPropagation()}>
         <h3>סגירת אירוע - {displayDate}</h3>
         {prefilledArtist && (
-  <div style={{ backgroundColor: '#f0f4f8', padding: '8px 12px', borderRadius: '6px', marginBottom: '10px', fontSize: '0.95rem', color: '#333' }}>
-    🎥 מסריט ראשי: <strong>{prefilledArtist.name}</strong> ({prefilledArtist.role})
-  </div>
-)}
-        
+          <div style={{ backgroundColor: '#f0f4f8', padding: '8px 12px', borderRadius: '6px', marginBottom: '10px', fontSize: '0.95rem', color: '#333' }}>
+            🎥 מסריט ראשי: <strong>{prefilledArtist.name}</strong> ({prefilledArtist.role})
+          </div>
+        )}
+
         <div className="form-row">
           <div className="form-group">
             <label>שם חתן:</label>
@@ -122,10 +142,10 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
         {hasSongs && (
           <div className="form-group">
             <label>רשימת שירים:</label>
-            <textarea 
-              value={songList} 
-              onChange={e => setSongList(e.target.value)} 
-              rows="3" 
+            <textarea
+              value={songList}
+              onChange={e => setSongList(e.target.value)}
+              rows="3"
               placeholder="הקלד כאן את השירים..."
             />
           </div>

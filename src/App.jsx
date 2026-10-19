@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HDate, HebrewCalendar } from '@hebcal/core';
 import ArtistManager from './ArtistManager';
 import AddArtistModal from './AddArtistModal';
@@ -26,14 +26,17 @@ function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isHebrewView, setIsHebrewView] = useState(false);
 
-  // מערך האומנים
-  const [artists, setArtists] = useState([
-    { id: '1', name: 'ישראל', role: 'צלם', color: '#00BCD4' },
-    { id: '2', name: 'דוד', role: 'רחפן', color: '#F44336' },
-    { id: '3', name: 'שרה', role: 'עורכת', color: '#9C27B0' },
-    { id: '4', name: 'יוסי', role: 'צלם 2', color: '#2196F3' },
-    { id: '5', name: 'משה', role: 'תאורה', color: '#4CAF50' }
-  ]);
+  // טעינה ראשונית מזיכרון הדפדפן (Local Storage) אם קיים
+  const [artists, setArtists] = useState(() => {
+    const saved = localStorage.getItem('calendar_artists');
+    return saved ? JSON.parse(saved) : [
+      { id: '1', name: 'ישראל', role: 'צלם', color: '#00BCD4' },
+      { id: '2', name: 'דוד', role: 'רחפן', color: '#F44336' },
+      { id: '3', name: 'שרה', role: 'עורכת', color: '#9C27B0' },
+      { id: '4', name: 'יוסי', role: 'צלם 2', color: '#2196F3' },
+      { id: '5', name: 'משה', role: 'תאורה', color: '#4CAF50' }
+    ];
+  });
 
   // משתנים עבור פתיחת וסגירת החלונות הקופצים
   const [isAddArtistOpen, setIsAddArtistOpen] = useState(false);
@@ -43,8 +46,29 @@ function App() {
   const [showWeekend, setShowWeekend] = useState(false); // שומר האם להציג או להסתיר את שישי-שבת
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const [scheduledEvents, setScheduledEvents] = useState([]); // <--- זו השורה שחסרה וגורמת לשגיאה!
-  const [tentativeHolds, setTentativeHolds] = useState([]);
+  const [scheduledEvents, setScheduledEvents] = useState(() => {
+    const saved = localStorage.getItem('calendar_events');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [tentativeHolds, setTentativeHolds] = useState(() => {
+    const saved = localStorage.getItem('calendar_tentatives');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // שמירה אוטומטית לזיכרון הדפדפן בכל שינוי
+  useEffect(() => {
+    localStorage.setItem('calendar_artists', JSON.stringify(artists));
+  }, [artists]);
+
+  useEffect(() => {
+    localStorage.setItem('calendar_events', JSON.stringify(scheduledEvents));
+  }, [scheduledEvents]);
+
+  useEffect(() => {
+    localStorage.setItem('calendar_tentatives', JSON.stringify(tentativeHolds));
+  }, [tentativeHolds]);
+
   const [selectedArtistForEvent, setSelectedArtistForEvent] = useState(null); // שומר את האומן שלחצנו עליו
   const [isAdvancesOpen, setIsAdvancesOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
