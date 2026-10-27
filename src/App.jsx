@@ -133,15 +133,17 @@ function App() {
     const hMonth = baseHDate.getMonth();
     const daysInMonth = HDate.daysInMonth(hMonth, hYear);
 
-    const firstDayOfMonth = new HDate(1, hMonth, hYear).greg();
-    const lastDayOfMonth = new HDate(daysInMonth, hMonth, hYear).greg();
+    const firstDayHDate = new HDate(1, hMonth, hYear);
+    const firstDayGreg = firstDayHDate.greg();
+    const lastDayGreg = new HDate(daysInMonth, hMonth, hYear).greg();
 
-    const startPadding = firstDayOfMonth.getDay();
+    const startPadding = firstDayGreg.getDay();
     const totalCells = Math.ceil((startPadding + daysInMonth) / 7) * 7;
 
     for (let i = 0; i < totalCells; i++) {
-      const cellDate = new Date(firstDayOfMonth.getFullYear(), firstDayOfMonth.getMonth(), 1 - startPadding + i);
-      const hDate = new HDate(cellDate);
+      // יוצרים את התאריך העברי של המשבצת ישירות מספריית HDate לפי אינדקס הימים
+      const hDate = new HDate(1, hMonth, hYear).add(i - startPadding, 'd');
+      const cellDate = hDate.greg(); // התאריך הלועזי המותאם במדויק ליום העברי
       const isCurrentMonth = hDate.getMonth() === hMonth;
 
       const dayEvents = events.filter(ev => ev.getDate().isSameDate(hDate));
@@ -158,10 +160,10 @@ function App() {
     const hebYearStr = baseHDate.renderGematriya().split(' ').pop().replace(/['"׳״]/g, '');
     mainTitle = `${hMonthName} ${hebYearStr}`;
 
-    const gMonth1 = gregMonthsMap[firstDayOfMonth.getMonth()];
-    const gMonth2 = gregMonthsMap[lastDayOfMonth.getMonth()];
+    const gMonth1 = gregMonthsMap[firstDayGreg.getMonth()];
+    const gMonth2 = gregMonthsMap[lastDayGreg.getMonth()];
     const gMonthDisplay = gMonth1 === gMonth2 ? gMonth1 : `${gMonth1}/${gMonth2}`;
-    const gYearDisplay = lastDayOfMonth.getFullYear();
+    const gYearDisplay = lastDayGreg.getFullYear();
     subTitle = `${gMonthDisplay} ${gYearDisplay}`;
 
     // הניווט קדימה ואחורה מותאם לקפיצות של חודשים עבריים
