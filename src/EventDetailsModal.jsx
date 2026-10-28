@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 
 export default function EventDetailsModal({ isOpen, onClose, event, artist, onEdit, onDelete }) {
 
-
   // הוספת מאזין לכפתור ה-Back של אנדרואיד
   useEffect(() => {
     const handlePopState = (e) => {
@@ -46,12 +45,12 @@ export default function EventDetailsModal({ isOpen, onClose, event, artist, onEd
         <div className="modal-actions" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
           <div>
             <button
-  className="save-btn"
-  style={{ backgroundColor: '#2196F3', marginLeft: '10px' }}
-  onClick={() => onEdit(event)} // <--- שולח את האירוע הספציפי שפתוח כרגע במסך
->
-  ✏️ עריכה
-</button>
+              className="save-btn"
+              style={{ backgroundColor: '#2196F3', marginLeft: '10px' }}
+              onClick={() => onEdit(event)}
+            >
+              ✏️ עריכה
+            </button>
             <button
               className="cancel-btn"
               style={{ backgroundColor: '#f44336', color: 'white' }}

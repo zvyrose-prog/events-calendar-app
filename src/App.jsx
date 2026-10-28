@@ -3,9 +3,12 @@ import { HDate, HebrewCalendar } from '@hebcal/core';
 import ArtistManager from './ArtistManager';
 import AddArtistModal from './AddArtistModal';
 import EventModal from './EventModal';
+import EventDetailsModal from './EventDetailsModal';
 import ArtistSquare from './ArtistSquare';
 import AdvancesModal from './AdvancesModal';
 import LoginModal from './LoginModal';
+import { subscribeToArtists, subscribeToEvents, addArtistToFirestore, addEventToFirestore, updateEventInFirestore, deleteEventFromFirestore } from './firebaseService';
+import { deleteArtistFromFirestore } from './firebaseService';
 import './App.css';
 
 // תרגום חודשים עבריים ולועזיים לעברית
@@ -25,18 +28,29 @@ const hebDays = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isHebrewView, setIsHebrewView] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null); // שומר את האירוע שעליו לחצו לצפייה
 
-  // טעינה ראשונית מזיכרון הדפדפן (Local Storage) אם קיים
-  const [artists, setArtists] = useState(() => {
-    const saved = localStorage.getItem('calendar_artists');
-    return saved ? JSON.parse(saved) : [
-      { id: '1', name: 'ישראל', role: 'צלם', color: '#00BCD4' },
-      { id: '2', name: 'דוד', role: 'רחפן', color: '#F44336' },
-      { id: '3', name: 'שרה', role: 'עורכת', color: '#9C27B0' },
-      { id: '4', name: 'יוסי', role: 'צלם 2', color: '#2196F3' },
-      { id: '5', name: 'משה', role: 'תאורה', color: '#4CAF50' }
-    ];
-  });
+  // הגדרת משתנה ה-State להתחלה כרשימה ריקה (הנתונים יגיעו מיד מהענן)
+  const [artists, setArtists] = useState([]);
+
+  // טעינה וסינכרון של אמנים בזמן אמת מהענן
+  useEffect(() => {
+    const unsubscribe = subscribeToArtists((artistsData) => {
+      if (artistsData.length === 0) {
+        const defaultArtists = [
+          { name: 'ישראל', role: 'צלם', color: '#00BCD4' },
+          { name: 'דוד', role: 'רחפן', color: '#F44336' },
+          { name: 'שרה', role: 'עורכת', color: '#9C27B0' },
+          { name: 'יוסי', role: 'צלם 2', color: '#2196F3' },
+          { name: 'משה', role: 'תאורה', color: '#4CAF50' }
+        ];
+        defaultArtists.forEach(artist => addArtistToFirestore(artist));
+      } else {
+        setArtists(artistsData);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // משתנים עבור פתיחת וסגירת החלונות הקופצים
   const [isAddArtistOpen, setIsAddArtistOpen] = useState(false);
@@ -62,6 +76,14 @@ function App() {
   useEffect(() => {
     localStorage.setItem('calendar_artists', JSON.stringify(artists));
   }, [artists]);
+
+  // 2. טעינה וסינכרון של אירועים בזמן אמת מהענן דרך קובץ השירות
+  useEffect(() => {
+    const unsubscribe = subscribeToEvents((eventsData) => {
+      setScheduledEvents(eventsData);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('calendar_events', JSON.stringify(scheduledEvents));
@@ -173,6 +195,19 @@ function App() {
 
   const toggleView = () => setIsHebrewView(!isHebrewView);
 
+  // פונקציה למחיקת אירוע מהענן
+  const handleDeleteEvent = async (eventId) => {
+    if (window.confirm("האם אתה בטוח שברצונך למחוק את האירוע?")) {
+      try {
+        await deleteEventFromFirestore(eventId);
+        // ה-state יתעדכן אוטומטית הודות ל-onSnapshot ברקע!
+      } catch (error) {
+        console.error("שגיאה במחיקת האירוע:", error);
+        alert("אירעה שגיאה בעת מחיקת האירוע.");
+      }
+    }
+  };
+
   // פונקציה לשמירת אומן (מקבלת את הנתונים מהחלון החיצוני)
   const handleAddArtist = (artistData) => {
     const newArtist = {
@@ -191,20 +226,30 @@ function App() {
     );
   };
 
-  // פונקציה למחיקת אומן מהמאגר
-  const handleDeleteArtist = (artistId) => {
-    setArtists(artists.filter(artist => artist.id !== artistId));
+
+
+  // פונקציה למחיקת אומן מהמאגר בענן
+  const handleDeleteArtist = async (artistId) => {
+    if (window.confirm("האם אתה בטוח שברצונך למחוק את האומן?")) {
+      try {
+        await deleteArtistFromFirestore(artistId);
+        // ה-state יתעדכן אוטומטית הודות ל-onSnapshot ברקע!
+      } catch (error) {
+        console.error("שגיאה במחיקת האומן:", error);
+        alert("אירעה שגיאה בעת מחיקת האומן.");
+      }
+    }
   };
 
-  // פונקציה לשמירת אירוע חדש או עדכון אירוע קיים (כולל בדיקת התנגשות אומן)
-  const handleSaveEvent = (eventData) => {
+  // פונקציה לשמירת אירוע חדש או עדכון אירוע קיים בענן (כולל בדיקת התנגשות אומן)
+  const handleSaveEvent = async (eventData) => {
     const formattedDateString = selectedDate ? selectedDate.toDateString() : "";
     const targetArtistId = eventData.artistId || (selectedArtistForEvent ? selectedArtistForEvent.id : null);
 
-    // 1. בדיקה האם לאומן היעד כבר יש אירוע תפוס באותו יום (ומדובר באירוע אחר משלנו)
-    const isArtistBusy = scheduledEvents.some(ev => 
-      ev.dateString === formattedDateString && 
-      ev.artistId === targetArtistId && 
+    // בדיקה האם לאומן היעד כבר יש אירוע תפוס באותו יום (ומדובר באירוע אחר משלנו)
+    const isArtistBusy = scheduledEvents.some(ev =>
+      ev.dateString === formattedDateString &&
+      ev.artistId === targetArtistId &&
       (!editingEvent || ev.id !== editingEvent.id) // אם אנחנו בעריכה, מתעלמים מהאירוע של עצמנו
     );
 
@@ -213,32 +258,31 @@ function App() {
       return; // עוצרים את השמירה ולא סוגרים את החלון
     }
 
-    if (editingEvent) {
-      // מצב עריכה: מסירים רק את האירוע הישן לפי ה-ID שלו
-      const cleanedEvents = scheduledEvents.filter(ev => ev.id !== editingEvent.id);
+    try {
+      if (editingEvent) {
+        // מצב עריכה: עדכון האירוע הקיים במסד הנתונים בענן
+        const updatedData = {
+          ...eventData,
+          dateString: formattedDateString,
+          artistId: targetArtistId
+        };
+        await updateEventInFirestore(editingEvent.id, updatedData);
+        setEditingEvent(null);
+      } else {
+        // מצב יצירת אירוע חדש לגמרי בענן
+        const newEvent = {
+          dateString: formattedDateString,
+          artistId: targetArtistId,
+          ...eventData
+        };
+        await addEventToFirestore(newEvent);
+      }
 
-      const updatedEvent = {
-        ...editingEvent,
-        ...eventData,
-        dateString: formattedDateString,
-        artistId: targetArtistId
-      };
-
-      setScheduledEvents([...cleanedEvents, updatedEvent]);
-      setEditingEvent(null);
-    } else {
-      // מצב יצירת אירוע חדש לגמרי
-      const newEvent = {
-        id: Date.now().toString(),
-        dateString: formattedDateString,
-        artistId: targetArtistId,
-        ...eventData
-      };
-
-      setScheduledEvents([...scheduledEvents, newEvent]);
+      setIsEventModalOpen(false);
+    } catch (error) {
+      console.error("שגיאה בשמירת האירוע לענן:", error);
+      alert("אירעה שגיאה בשמירה, נסה שוב.");
     }
-
-    setIsEventModalOpen(false);
   };
 
   // פונקציה להוספה/הסרה של סימן שאלה לאומן בלחיצה על הריבוע שלו
@@ -344,14 +388,14 @@ function App() {
           </main>
 
           {/* --- חלונות קופצים --- */}
-        <ArtistManager
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          artists={artists}
-          onDelete={handleDeleteArtist}
-          onAddArtist={handleAddArtist}
-          onEditArtist={handleEditArtist}
-        />
+          <ArtistManager
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            artists={artists}
+            onDelete={handleDeleteArtist}
+            onAddArtist={handleAddArtist}
+            onEditArtist={handleEditArtist}
+          />
 
           <AddArtistModal
             isOpen={isAddArtistOpen}
@@ -360,27 +404,39 @@ function App() {
           />
 
           {isArtistManagerOpen && (
-        <ArtistManager
-          isOpen={isArtistManagerOpen}
-          onClose={() => setIsArtistManagerOpen(false)}
-          artists={artists}
-          onDelete={handleDeleteArtist}
-          onAddArtist={handleAddArtist}
-          onEditArtist={handleEditArtist} // <--- תוודא שהשורה הזו קיימת כאן
-        />
-      )}
+            <ArtistManager
+              isOpen={isArtistManagerOpen}
+              onClose={() => setIsArtistManagerOpen(false)}
+              artists={artists}
+              onDelete={handleDeleteArtist}
+              onAddArtist={handleAddArtist}
+              onEditArtist={handleEditArtist} // <--- תוודא שהשורה הזו קיימת כאן
+            />
+          )}
+
+          <EventDetailsModal
+  isOpen={!!selectedEvent}
+  event={selectedEvent}
+  artist={artists.find(a => a.id === selectedEvent?.artistId)}
+  onClose={() => setSelectedEvent(null)}
+  onEdit={(eventToEdit) => {
+    setEditingEvent(eventToEdit);
+    setSelectedEvent(null);
+  }}
+  onDelete={handleDeleteEvent}
+/>
 
           {isEventModalOpen && (
-        <EventModal
-          isOpen={isEventModalOpen}
-          onClose={() => setIsEventModalOpen(false)}
-          onSave={handleSaveEvent}
-          selectedDate={selectedDate}
-          prefilledArtist={selectedArtistForEvent}
-          existingEvent={editingEvent}
-          artists={artists}
-        />
-      )}
+            <EventModal
+              isOpen={isEventModalOpen}
+              onClose={() => setIsEventModalOpen(false)}
+              onSave={handleSaveEvent}
+              selectedDate={selectedDate}
+              prefilledArtist={selectedArtistForEvent}
+              existingEvent={editingEvent}
+              artists={artists}
+            />
+          )}
 
           <AdvancesModal
             isOpen={isAdvancesOpen}

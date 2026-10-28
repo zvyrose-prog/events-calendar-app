@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 export default function EventModal({ isOpen, onClose, onSave, selectedDate, prefilledArtist, existingEvent, artists }) {
-  
+
   // אתחול השדות מתוך existingEvent (אם קיים) או ריקים (אם חדש)
   const [groomName, setGroomName] = useState(existingEvent?.groomName || "");
   const [brideName, setBrideName] = useState(existingEvent?.brideName || "");
@@ -16,6 +16,7 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
   const [songList, setSongList] = useState(existingEvent?.songList || "");
   const [materialCollected, setMaterialCollected] = useState(existingEvent?.materialCollected || false);
   const [hasAdvancePaid, setHasAdvancePaid] = useState(existingEvent?.hasAdvancePaid || false);
+  const [isTentative, setIsTentative] = useState(existingEvent?.isTentative || false);
 
   // בחירת אומן
   const [selectedArtistId, setSelectedArtistId] = useState(
@@ -72,7 +73,8 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
       songList: hasSongs ? songList : "", // שומר את השירים רק אם סומן "כן"
       materialCollected,
       hasAdvancePaid,
-      artistId: selectedArtistId // <--- תוסיף את השורה הזו כאן!
+      artistId: selectedArtistId, // <--- תוסיף את השורה הזו כאן!
+      isTentative
     };
 
     onSave(eventData);
@@ -81,19 +83,20 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
     setGroomName(""); setBrideName(""); setVenue(""); setPhone1(""); setPhone2("");
     setPhotographer(""); setVideoEditor(""); setHasSongs(false); setSongList(""); setMaterialCollected(false);
     setHasAdvancePaid(false);
+    setIsTentative(false); // יחד עם שאר האיפוסים של השדות
   }; // <--- כאן הפונקציה handleSaveClick נסגרת סוף סוף כמו שצריך!
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content event-modal" onClick={(e) => e.stopPropagation()}>
-        
+
         <h3>{existingEvent ? "עריכת אירוע" : "סגירת אירוע"} - {displayDate}</h3>
-        
+
         {/* בחירת אומן / איש צוות דינמית */}
         <div className="form-group" style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>אומן / איש צוות:</label>
-          <select 
-            value={selectedArtistId} 
+          <select
+            value={selectedArtistId}
             onChange={(e) => setSelectedArtistId(e.target.value)}
             style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ccc' }}
           >
@@ -169,6 +172,18 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
             />
           </div>
         )}
+
+        {/* רובריקה לסימן שאלה בעיצוב תואם לשאר השורות */}
+        <div className="form-group checkbox-group">
+          <label style={{ cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={isTentative} 
+              onChange={e => setIsTentative(e.target.checked)} 
+            />
+            סימן שאלה ❓
+          </label>
+        </div>
 
         {/* רובריקה חדשה: שולמה מקדמה? */}
         <div className="form-group checkbox-group">
