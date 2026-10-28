@@ -145,11 +145,57 @@ body {
 
 .day-cell {
   background-color: white;
-  padding: 4px; /* הקטנו מעט פדינג כדי שהכל ייכנס בנוחות בלי לחרוג */
+  padding: 2px;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start; /* מוודא שהכל נצמד למעלה במקום להתפזר */
+  height: auto; /* משחרר גובה קבוע שיצור רווחים ריקים */
+  min-height: unset;
+  box-sizing: border-box;
+}
+
+
+/* עיצוב כרטיסיית האמן עצמה בתוך הלוח (במידה ויש לה קלאס פנימי) */
+.artist-square-item, .artist-box {
+  padding: 2px 4px;
+  font-size: 0.8rem;
+  border-radius: 3px;
+  white-space: nowrap;
   overflow: hidden;
-  height: 100%;
+  text-overflow: ellipsis;
+}
+
+.dates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0px;
+  line-height: 1; /* מאפס את גובה השורה המיותר מסביב לכותרת */
+}
+
+.primary-date {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #222;
+  line-height: 1; /* מצמצם את השטח הריק של המספר הגדול */
+}
+
+.secondary-date {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #888;
+  line-height: 1; /* מצמצם את השטח הריק של המספר הקטן */
+}
+
+/* שורת החגים/אירועים בתוך היום */
+.day-events {
+  font-size: 0.75rem;
+  color: #d9534f;
+  margin-top: 2px; /* רווח זעיר ונקי של 2 פיקסלים בלבד מתחת לתאריך */
+  margin-bottom: 0px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calendar-header {
@@ -162,24 +208,7 @@ body {
   color: #333;
 }
 
-.dates-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 5px;
-}
 
-.primary-date {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #222;
-}
-
-.secondary-date {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #888;
-}
 
 .not-current-month {
   background-color: #f9f9f9;

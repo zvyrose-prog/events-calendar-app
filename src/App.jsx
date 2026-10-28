@@ -357,13 +357,14 @@ function App() {
                         </>
                       )}
                     </div>
+                    {/* אירועי היום - נגביל לגובה מינימלי ונמנע חריגה */}
                     <div className="day-events">
                       {day.events.map((ev, i) => (
                         <div key={i} className="holiday-text">{ev}</div>
                       ))}
                     </div>
 
-                    {/* ריבועי האומנים */}
+                    {/* ריבועי האומנים - עטפנו בקונטיינר עם גלילה נקייה או צמצום */}
                     <div className="artists-squares">
                       {artists.map(artist => (
                         <ArtistSquare
@@ -375,8 +376,8 @@ function App() {
                           onOpenEventModal={(date, art, eventToEdit = null) => {
                             setSelectedDate(date);
                             setSelectedArtistForEvent(art);
-                            setEditingEvent(eventToEdit); // שומר את האירוע בזיכרון כדי שהטופס ידע להציג אותו
-                            setIsEventModalOpen(true);    // פותח את חלון הנתונים
+                            setEditingEvent(eventToEdit);
+                            setIsEventModalOpen(true);
                           }}
                           onToggleTentative={toggleTentative}
                         />
