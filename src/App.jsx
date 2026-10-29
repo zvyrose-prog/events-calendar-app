@@ -7,7 +7,7 @@ import EventDetailsModal from './EventDetailsModal';
 import ArtistSquare from './ArtistSquare';
 import AdvancesModal from './AdvancesModal';
 import LoginModal from './LoginModal';
-import { subscribeToArtists, subscribeToEvents, addArtistToFirestore, addEventToFirestore, updateEventInFirestore, deleteEventFromFirestore } from './firebaseService';
+import { subscribeToArtists, subscribeToEvents, addEventToFirestore, updateEventInFirestore, deleteEventFromFirestore } from './firebaseService';
 import { deleteArtistFromFirestore } from './firebaseService';
 import './App.css';
 
@@ -23,12 +23,15 @@ const gregMonthsMap = [
   "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
 ];
 
+
 const hebDays = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "יא", "יב", "יג", "יד", "טו", "טז", "יז", "יח", "יט", "כ", "כא", "כב", "כג", "כד", "כה", "כו", "כז", "כח", "כט", "ל"];
 
 function App() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isHebrewView, setIsHebrewView] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null); // שומר את האירוע שעליו לחצו לצפייה
+  const [isArtistsLoaded, setIsArtistsLoaded] = useState(false);
+
 
   // הגדרת משתנה ה-State להתחלה כרשימה ריקה (הנתונים יגיעו מיד מהענן)
   const [artists, setArtists] = useState([]);
@@ -36,18 +39,8 @@ function App() {
   // טעינה וסינכרון של אמנים בזמן אמת מהענן
   useEffect(() => {
     const unsubscribe = subscribeToArtists((artistsData) => {
-      if (artistsData.length === 0) {
-        const defaultArtists = [
-          { name: 'ישראל', role: 'צלם', color: '#00BCD4' },
-          { name: 'דוד', role: 'רחפן', color: '#F44336' },
-          { name: 'שרה', role: 'עורכת', color: '#9C27B0' },
-          { name: 'יוסי', role: 'צלם 2', color: '#2196F3' },
-          { name: 'משה', role: 'תאורה', color: '#4CAF50' }
-        ];
-        defaultArtists.forEach(artist => addArtistToFirestore(artist));
-      } else {
-        setArtists(artistsData);
-      }
+      setArtists(artistsData);
+      setIsArtistsLoaded(true); // מסמן שהנתונים נטענו מהענן
     });
     return () => unsubscribe();
   }, []);
@@ -312,14 +305,14 @@ function App() {
               <button onClick={nextMonthFn}>◀</button>
             </div>
             <div className="header-actions">
-              <button className="view-toggle-btn" onClick={toggleView}>
+              <button className="view-toggle-btn" onClick={toggleView}style={{ backgroundColor: '#3f51b5', color: '#fff', borderRadius: '8px' }}>
                 {isHebrewView ? "עבור לתצוגה לועזית" : "עבור לתצוגה עברית"}
               </button>
-              <button className="view-toggle-btn" onClick={() => setShowWeekend(!showWeekend)}>
+              <button className="view-toggle-btn" onClick={() => setShowWeekend(!showWeekend)}style={{ backgroundColor: '#1e3a8a', color: '#fff', borderRadius: '8px' }}>
                 {showWeekend ? "הסתר סופ\"ש" : "הצג סופ\"ש"}
               </button>
-              <button className="settings-btn" onClick={() => setIsSettingsOpen(true)}>⚙️ ניהול אומנים</button>
-              <button className="settings-btn" onClick={() => setIsAdvancesOpen(true)} style={{ backgroundColor: '#ff9800' }}>
+              <button className="settings-btn" onClick={() => setIsSettingsOpen(true)} style={{ backgroundColor: '#334155' }}>⚙️ ניהול אומנים</button>
+              <button className="settings-btn" onClick={() => setIsAdvancesOpen(true)} style={{ backgroundColor: '#047857' }}>
                 💰 מקדמות
               </button>
             </div>
@@ -334,6 +327,21 @@ function App() {
                 </>
               )}
             </div>
+
+            {isArtistsLoaded && artists.length === 0 && (
+              <div style={{
+                backgroundColor: '#fff3cd',
+                color: '#856404',
+                border: '1px solid #ffeeba',
+                padding: '12px',
+                borderRadius: '8px',
+                textAlign: 'center',
+                margin: '10px auto',
+                fontWeight: 'bold'
+              }}>
+                כנס לניהול אומנים והוסף את האומנים לזיכרון
+              </div>
+            )}
 
             <div className="calendar-grid" style={{ gridTemplateColumns: showWeekend ? 'repeat(7, 1fr)' : 'repeat(5, 1fr)' }}>
               {daysArray
@@ -416,16 +424,16 @@ function App() {
           )}
 
           <EventDetailsModal
-  isOpen={!!selectedEvent}
-  event={selectedEvent}
-  artist={artists.find(a => a.id === selectedEvent?.artistId)}
-  onClose={() => setSelectedEvent(null)}
-  onEdit={(eventToEdit) => {
-    setEditingEvent(eventToEdit);
-    setSelectedEvent(null);
-  }}
-  onDelete={handleDeleteEvent}
-/>
+            isOpen={!!selectedEvent}
+            event={selectedEvent}
+            artist={artists.find(a => a.id === selectedEvent?.artistId)}
+            onClose={() => setSelectedEvent(null)}
+            onEdit={(eventToEdit) => {
+              setEditingEvent(eventToEdit);
+              setSelectedEvent(null);
+            }}
+            onDelete={handleDeleteEvent}
+          />
 
           {isEventModalOpen && (
             <EventModal

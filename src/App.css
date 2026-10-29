@@ -16,12 +16,19 @@ body {
 }
 
 .top-bar {
-  background-color: #d1d0d0;
+  background-color: #8fb9f7;
   color: rgb(43, 43, 43);
   padding: 15px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.top-bar h1 {
+  font-size: 1.8rem; /* גודל הכותרת - אפשר לשנות לפי הטעם */
+  line-height: 1.15 !important; /* מתקן את עליית השורות זו על זו */
+  margin: 0;
+  text-align: right;
 }
 
 .month-navigation {
@@ -69,6 +76,16 @@ body {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* אחידות לגובה ויישור לכל הכפתורים בשורה העליונה */
+.header-actions button {
+  height: 40px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 16px !important;
 }
 
 .view-toggle-btn,
@@ -152,6 +169,9 @@ body {
   height: auto; /* משחרר גובה קבוע שיצור רווחים ריקים */
   min-height: unset;
   box-sizing: border-box;
+  min-width: 0 !important; 
+  max-width: 100%;
+  overflow: hidden;
 }
 
 
@@ -187,15 +207,14 @@ body {
   line-height: 1; /* מצמצם את השטח הריק של המספר הקטן */
 }
 
-/* שורת החגים/אירועים בתוך היום */
+/* מיכל אירועי היום */
 .day-events {
-  font-size: 0.75rem;
-  color: #d9534f;
-  margin-top: 2px; /* רווח זעיר ונקי של 2 פיקסלים בלבד מתחת לתאריך */
-  margin-bottom: 0px;
+  min-width: 0;
+  margin-top: 1px;
+  margin-bottom: 1px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
 }
 
 .calendar-header {
@@ -219,10 +238,14 @@ body {
   color: #bbb;
 }
 
+/* הטקסט עצמו - חותך עם שלוש נקודות ומונע מתיחה לרוחב */
 .holiday-text {
-  font-size: 0.8rem;
-  color: #888;
-  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #d9534f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .settings-btn {
