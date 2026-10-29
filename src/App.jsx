@@ -7,8 +7,16 @@ import EventDetailsModal from './EventDetailsModal';
 import ArtistSquare from './ArtistSquare';
 import AdvancesModal from './AdvancesModal';
 import LoginModal from './LoginModal';
-import { subscribeToArtists, subscribeToEvents, addEventToFirestore, updateEventInFirestore, deleteEventFromFirestore } from './firebaseService';
-import { deleteArtistFromFirestore } from './firebaseService';
+import { 
+  subscribeToArtists, 
+  addArtistToFirestore, 
+  updateArtistInFirestore, 
+  deleteArtistFromFirestore,
+  subscribeToEvents, 
+  addEventToFirestore, 
+  updateEventInFirestore, 
+  deleteEventFromFirestore 
+} from './firebaseService';
 import './App.css';
 
 // תרגום חודשים עבריים ולועזיים לעברית
@@ -200,23 +208,26 @@ function App() {
     }
   };
 
-  // פונקציה לשמירת אומן (מקבלת את הנתונים מהחלון החיצוני)
-  const handleAddArtist = (artistData) => {
-    const newArtist = {
-      id: Date.now().toString(),
-      ...artistData // לוקח את השם, התפקיד, הטלפון והצבע מהחלון
-    };
-    setArtists([...artists, newArtist]);
-    setIsAddArtistOpen(false);
+  // פונקציה לשמירת אומן חדש בענן
+  const handleAddArtist = async (artistData) => {
+    try {
+      await addArtistToFirestore(artistData);
+      setIsAddArtistOpen(false);
+    } catch (error) {
+      console.error("שגיאה בשמירת האומן בענן:", error);
+      alert("שגיאה בשמירת האומן בענן");
+    }
   };
 
-  const handleEditArtist = (updatedArtist) => {
-    setArtists(prevArtists =>
-      prevArtists.map(art =>
-        art.id === updatedArtist.id ? updatedArtist : art
-      )
-    );
+  const handleEditArtist = async (updatedArtist) => {
+    try {
+      await updateArtistInFirestore(updatedArtist.id, updatedArtist);
+    } catch (error) {
+      console.error("שגיאה בעדכון האומן בענן:", error);
+      alert("שגיאה בעדכון האומן בענן");
+    }
   };
+
   const handleDeleteArtist = async (artistId) => {
     console.log("מנסה למחוק אמן עם ID:", artistId);
     if (window.confirm("האם אתה בטוח שברצונך למחוק את האומן?")) {
@@ -395,7 +406,7 @@ function App() {
                 ))}
             </div>
           </main>
-          
+
           {/* --- חלונות קופצים --- */}
           <AddArtistModal
             isOpen={isAddArtistOpen}

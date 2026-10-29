@@ -19,6 +19,16 @@ export const addArtistToFirestore = async (artistData) => {
   await addDoc(collection(db, "artists"), artistData);
 };
 
+// עדכון אומן קיים
+export const updateArtistInFirestore = async (artistId, artistData) => {
+  const artistRef = doc(db, "artists", artistId);
+  
+  // יוצרים עותק של הנתונים בלי שדה ה-id כדי לא לשמור אותו כפול במסמך
+  const dataToUpdate = { ...artistData };
+  delete dataToUpdate.id;
+
+  await updateDoc(artistRef, dataToUpdate);
+};
 
 // --- ניהול אירועים ---
 
