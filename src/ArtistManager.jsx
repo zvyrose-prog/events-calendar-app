@@ -65,6 +65,7 @@ export default function ArtistManager({ isOpen, onClose, artists, onDelete, onAd
 
         {/* חלון הוספה / עריכת אומן נפתח מתוך מסך הניהול */}
         <AddArtistModal 
+          key={editingArtist ? `edit-${editingArtist.id}` : `add-${artists.length}-${isAddModalOpen}`}
           isOpen={isAddModalOpen} 
           onClose={() => { setIsAddModalOpen(false); setEditingArtist(null); }} 
           onSave={(artistData) => {
@@ -77,6 +78,7 @@ export default function ArtistManager({ isOpen, onClose, artists, onDelete, onAd
             setEditingArtist(null);
           }}
           existingArtist={editingArtist} // מעביר את נתוני האומן לטופס במצב עריכה
+          artists={artists} // מעביר את רשימת האומנים כדי לבדוק צבעים תפוסים
         />
 
         

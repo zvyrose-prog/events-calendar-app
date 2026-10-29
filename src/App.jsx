@@ -47,7 +47,6 @@ function App() {
 
   // משתנים עבור פתיחת וסגירת החלונות הקופצים
   const [isAddArtistOpen, setIsAddArtistOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isArtistManagerOpen, setIsArtistManagerOpen] = useState(false);
 
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -218,15 +217,16 @@ function App() {
       )
     );
   };
-
-
-
-  // פונקציה למחיקת אומן מהמאגר בענן
   const handleDeleteArtist = async (artistId) => {
+    console.log("מנסה למחוק אמן עם ID:", artistId);
     if (window.confirm("האם אתה בטוח שברצונך למחוק את האומן?")) {
       try {
-        await deleteArtistFromFirestore(artistId);
-        // ה-state יתעדכן אוטומטית הודות ל-onSnapshot ברקע!
+        await deleteArtistFromFirestore(String(artistId)); // מוודא שזה מחרוזת
+
+        // עדכון מיידי של המסך והרשימה המקומית כדי שלא יישאר תקוע
+        setArtists(prevArtists => prevArtists.filter(artist => artist.id !== artistId));
+
+        console.log("האמן נמחק בהצלחה מהענן ומהמסך!");
       } catch (error) {
         console.error("שגיאה במחיקת האומן:", error);
         alert("אירעה שגיאה בעת מחיקת האומן.");
@@ -305,13 +305,13 @@ function App() {
               <button onClick={nextMonthFn}>◀</button>
             </div>
             <div className="header-actions">
-              <button className="view-toggle-btn" onClick={toggleView}style={{ backgroundColor: '#3f51b5', color: '#fff', borderRadius: '8px' }}>
+              <button className="view-toggle-btn" onClick={toggleView} style={{ backgroundColor: '#3f51b5', color: '#fff', borderRadius: '8px' }}>
                 {isHebrewView ? "עבור לתצוגה לועזית" : "עבור לתצוגה עברית"}
               </button>
-              <button className="view-toggle-btn" onClick={() => setShowWeekend(!showWeekend)}style={{ backgroundColor: '#1e3a8a', color: '#fff', borderRadius: '8px' }}>
+              <button className="view-toggle-btn" onClick={() => setShowWeekend(!showWeekend)} style={{ backgroundColor: '#1e3a8a', color: '#fff', borderRadius: '8px' }}>
                 {showWeekend ? "הסתר סופ\"ש" : "הצג סופ\"ש"}
               </button>
-              <button className="settings-btn" onClick={() => setIsSettingsOpen(true)} style={{ backgroundColor: '#334155' }}>⚙️ ניהול אומנים</button>
+              <button className="settings-btn" onClick={() => setIsArtistManagerOpen(true)} style={{ backgroundColor: '#334155' }}>⚙️ ניהול אומנים</button>
               <button className="settings-btn" onClick={() => setIsAdvancesOpen(true)} style={{ backgroundColor: '#047857' }}>
                 💰 מקדמות
               </button>
@@ -395,21 +395,13 @@ function App() {
                 ))}
             </div>
           </main>
-
+          
           {/* --- חלונות קופצים --- */}
-          <ArtistManager
-            isOpen={isSettingsOpen}
-            onClose={() => setIsSettingsOpen(false)}
-            artists={artists}
-            onDelete={handleDeleteArtist}
-            onAddArtist={handleAddArtist}
-            onEditArtist={handleEditArtist}
-          />
-
           <AddArtistModal
             isOpen={isAddArtistOpen}
             onClose={() => setIsAddArtistOpen(false)}
             onSave={handleAddArtist}
+            artists={artists}
           />
 
           {isArtistManagerOpen && (

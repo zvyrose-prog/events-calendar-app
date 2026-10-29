@@ -38,12 +38,16 @@ export default function ArtistSquare({
     <>
 
       {/* החלף את השורה הזו בריבוע: */}
-      <div
+<div
         className="artist-square"
         style={{
-          backgroundColor: isBooked ? (bookedEvent.isTentative ? '#ff9800' : artist.color) : `${artist.color}25`,
-          color: isBooked ? '#fff' : '#111',
-          border: `1px solid ${artist.color}`,
+          // רק אירוע סגור (יש אמיתי) מקבל צבע מלא. פנוי או סימן שאלה מקבלים את הצבע הבהיר והעדין של האמן
+          backgroundColor: (isBooked && !bookedEvent.isTentative) ? (artist.color || '#3f51b5') : `${artist.color || '#3f51b5'}25`,
+          
+          // טקסט לבן באירוע סגור מלא, או צבע האמן בבהיר/סימן שאלה
+          color: (isBooked && !bookedEvent.isTentative) ? '#fff' : (artist.color || '#3f51b5'),
+          
+          border: `1px solid ${artist.color || '#3f51b5'}`,
         }}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
