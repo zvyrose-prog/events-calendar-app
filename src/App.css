@@ -1,0 +1,509 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #f5f5f5;
+}
+
+.app-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  background-color: #8fb9f7;
+  color: rgb(43, 43, 43);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.top-bar h1 {
+  font-size: 1.8rem;
+  line-height: 1.15 !important;
+  margin: 0;
+  text-align: right;
+}
+
+/* הצגת הכותרת והמשתמש המחובר בשורה אחת */
+.title-and-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logged-user-badge {
+  background-color: #e2e8f0;
+  color: #1e293b;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.month-titles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 180px;
+}
+
+.month-titles h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.sub-month-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #3b3b3b;
+  font-weight: normal;
+}
+
+.month-navigation button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.month-navigation button:hover {
+  background-color: #4a4a4a;
+  border-radius: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* אחידות לגובה ויישור לכל הכפתורים בשורה העליונה */
+.header-actions button {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 12px;
+}
+
+.view-toggle-btn,
+.settings-btn, 
+.add-artist-btn {
+  background-color: #3f51b5;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.add-artist-btn {
+  background-color: #2196F3;
+}
+
+.settings-btn {
+  background-color: #607D8B;
+}
+
+.view-toggle-btn {
+  background-color: #455A64;
+}
+
+.view-toggle-btn:hover, 
+.settings-btn:hover, 
+.add-artist-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.calendar-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  flex: 1;
+  gap: 2px;
+  background-color: #ddd;
+  border: 2px solid #ddd;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.day-cell {
+  background-color: white;
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: auto;
+  min-height: unset;
+  box-sizing: border-box;
+  min-width: 0 !important; 
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.artist-square-item, .artist-box {
+  padding: 2px 4px;
+  font-size: 0.8rem;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0px;
+  line-height: 1;
+}
+
+.primary-date {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #222;
+  line-height: 1;
+}
+
+.secondary-date {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #888;
+  line-height: 1;
+}
+
+.day-events {
+  min-width: 0;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-weight: bold;
+  padding: 10px 0;
+  background-color: #ecdfe1;
+  color: #333;
+}
+
+.not-current-month {
+  background-color: #f9f9f9;
+}
+
+.not-current-month .primary-date,
+.not-current-month .secondary-date {
+  color: #bbb;
+}
+
+.holiday-text {
+  font-size: 0.75rem;
+  color: #d9534f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.artist-list-item { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 10px; 
+  border: 1px solid #aaa;
+  border-radius: 6px; 
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.event-modal {
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  width: 90% !important;
+  max-width: 750px !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.artists-squares {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: auto;
+  width: 100%;
+  padding-top: 5px;
+}
+
+.artist-square {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.artist-square:hover {
+  transform: scale(1.05);
+  z-index: 2;
+}
+
+.event-modal select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  background-color: white;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.event-modal select:focus {
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+/* --- התאמה למסכי פלאפון (מובייל) --- */
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .top-bar {
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .title-and-user {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .top-bar h1 {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  .logged-user-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    max-width: 140px;
+  }
+
+  .month-navigation {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .month-titles h2 {
+    font-size: 1.05rem;
+  }
+
+  .sub-month-title {
+    font-size: 0.8rem;
+  }
+
+  /* כל 5 הכפתורים בשורה אחת קומפקטית בפלאפון */
+  .header-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(5, auto);
+    gap: 4px;
+  }
+
+  .header-actions button {
+    height: 30px;
+    border-radius: 8px;
+    width: 100%;
+    padding: 4px 3px;
+    font-size: 11px;
+  }
+
+  .calendar-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    padding: 2px;
+    box-sizing: border-box;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: 1fr;
+    flex: 1;
+    gap: 1px;
+    background-color: #ddd;
+    border: 1px solid #ddd;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .day-cell {
+    background-color: white;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .calendar-header {
+    font-size: 0.75rem;
+    padding: 5px 0;
+  }
+
+  .dates-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  .primary-date {
+    font-size: 13px;
+  }
+
+  .secondary-date {
+    font-size: 11px;
+    margin-top: 0;
+  }
+
+  .holiday-text {
+    font-size: 0.6rem;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .artists-squares {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .artist-square {
+    width: 100%;
+    height: 18px;
+    font-size: 10px;
+    border-radius: 3px;
+  }
+}
+
+/* --- עיצוב חלון קופץ (Modal) --- */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
+}
+.modal-content {
+  background-color: white; padding: 25px; border-radius: 8px;
+  width: 90%; max-width: 400px;
+  display: flex; flex-direction: column; gap: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.modal-content h3 { margin: 0 0 10px 0; color: #333; text-align: center; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 0.9rem; font-weight: bold; color: #555; }
+.form-group input[type="text"] { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.color-picker { width: 100%; height: 40px; padding: 2px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; }
+.modal-actions { display: flex; justify-content: space-between; gap: 15px; margin-top: 15px; }
+.save-btn { background-color: #4CAF50; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; }
+.cancel-btn { background-color: #f44336; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; }
+.save-btn:hover { background-color: #45a049; }
+.cancel-btn:hover { background-color: #d32f2f; }
