@@ -1,6 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { auth } from './firebase';
+import { deleteEventFromFirestore } from './firebaseService';
 
 export default function EventDetailsModal({ isOpen, onClose, event, artist, onEdit, onDelete, artists = [] }) {
+
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // איפוס מצב אישור מחיקה כשמחליפים אירוע או סוגרים חלון
+  const sessionKey = `${isOpen}-${event?.id || ''}`;
+  const [prevKey, setPrevKey] = useState(sessionKey);
+  if (sessionKey !== prevKey) {
+    setPrevKey(sessionKey);
+    setConfirmDelete(false);
+  }
 
   // הוספת מאזין לכפתור ה-Back של אנדרואיד
   useEffect(() => {
@@ -110,6 +122,17 @@ export default function EventDetailsModal({ isOpen, onClose, event, artist, onEd
           {event.hasSongs && (
             <p><strong>🎵 רשימת שירים:</strong><br /> <span style={{ whiteSpace: 'pre-wrap' }}>{event.songList}</span></p>
           )}
+
+          {/* הצגת שדות מותאמים אישית שהוזנו לאירוע זה */}
+          {event.customFieldsSnapshot?.map(field => {
+            const val = event.customValues?.[field.id];
+            if (!val) return null; // מציג רק שדות שיש בהם תוכן
+            return (
+              <p key={field.id}>
+                <strong>{field.label}:</strong> {val}
+              </p>
+            );
+          })}
         </div>
 
         {/* כפתור שליחת וואטסאפ לאומן */}
@@ -146,16 +169,33 @@ export default function EventDetailsModal({ isOpen, onClose, event, artist, onEd
               ✏️ עריכה
             </button>
             <button
+              type="button"
               className="cancel-btn"
-              style={{ backgroundColor: '#f44336', color: 'white' }}
-              onClick={() => {
-                if (window.confirm("בטוח שאתה מעוניין למחוק את האירוע?")) {
-                  onDelete(event.id);
+              style={{ 
+                backgroundColor: confirmDelete ? '#b71c1c' : '#f44336', 
+                color: 'white',
+                fontWeight: confirmDelete ? 'bold' : 'normal'
+              }}
+              onClick={async () => {
+                if (!confirmDelete) {
+                  setConfirmDelete(true);
+                  return;
+                }
+                try {
+                  if (auth?.currentUser && event?.id) {
+                    await deleteEventFromFirestore(auth.currentUser.uid, event.id);
+                  } else if (onDelete) {
+                    await onDelete(event?.id);
+                  }
+                  setConfirmDelete(false);
                   onClose();
+                } catch (err) {
+                  console.error("שגיאה במחיקה:", err);
+                  alert("שגיאה במחיקת האירוע: " + err.message);
                 }
               }}
             >
-              🗑️ מחיקה
+              {confirmDelete ? "⚠️ לחץ שוב לאישור" : "🗑️ מחיקה"}
             </button>
           </div>
           <button className="cancel-btn" onClick={onClose}>סגור</button>

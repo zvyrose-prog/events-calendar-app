@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 
-export default function EventModal({ isOpen, onClose, onSave, selectedDate, prefilledArtist, existingEvent, artists }) {
-
+export default function EventModal({ isOpen, onClose, onSave, selectedDate, prefilledArtist, existingEvent, artists, editorsList = [], customFields = [] }) {
+  console.log("🎬 Editors List received in Modal:", editorsList);
+  console.log("➕ Custom Fields received in Modal:", customFields);
+  
+  
   // אתחול השדות מתוך existingEvent (אם קיים) או ריקים (אם חדש)
   const [groomName, setGroomName] = useState(existingEvent?.groomName || "");
   const [brideName, setBrideName] = useState(existingEvent?.brideName || "");
@@ -10,6 +13,7 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
   const [phone2, setPhone2] = useState(existingEvent?.phone2 || "");
   const [photographer, setPhotographer] = useState(existingEvent?.photographer || "");
   const [videoEditor, setVideoEditor] = useState(existingEvent?.videoEditor || "");
+  const [customValues, setCustomValues] = useState(existingEvent?.customValues || {});
 
   // שדות בוליאניים (כן/לא)
   const [hasSongs, setHasSongs] = useState(existingEvent?.hasSongs || false);
@@ -22,14 +26,6 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
   const [selectedArtistId, setSelectedArtistId] = useState(
     existingEvent?.artistId || prefilledArtist?.id || (artists && artists[0]?.id) || ""
   );
-
-  // מאגר עורכי וידאו קבועים (נשמר כמו שהיה!)
-  const [editorsList] = useState([
-    { id: '1', name: 'מירי שטרנפלד' },
-    { id: '2', name: 'מירי שווב' },
-    { id: '3', name: 'אלקי' },
-    { id: '4', name: 'נויגרשל' }
-  ]);
 
   // טיפול בכפתור חזרה (Back) באנדרואיד לסגירת החלון בלבד
   useEffect(() => {
@@ -76,7 +72,9 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
       materialCollected,
       hasAdvancePaid,
       artistId: selectedArtistId, // <--- תוסיף את השורה הזו כאן!
-      isTentative
+      isTentative,
+      customValues,
+      customFieldsSnapshot: customFields
     };
 
     onSave(eventData);
@@ -153,6 +151,19 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
               ))}
             </select>
           </div>
+
+          {/* רינדור אוטומטי של כל השדות שהמשתמש הוסיף לעצמו */}
+          {customFields.map(field => (
+            <div className="form-group" key={field.id}>
+              <label>{field.label}:</label>
+              <input
+                type="text"
+                value={customValues[field.id] || ''}
+                onChange={e => setCustomValues(prev => ({ ...prev, [field.id]: e.target.value }))}
+                placeholder={`הכנס ${field.label}...`}
+              />
+            </div>
+          ))}
         </div>
 
         <div className="form-group checkbox-group">
@@ -178,10 +189,10 @@ export default function EventModal({ isOpen, onClose, onSave, selectedDate, pref
         {/* רובריקה לסימן שאלה בעיצוב תואם לשאר השורות */}
         <div className="form-group checkbox-group">
           <label style={{ cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={isTentative} 
-              onChange={e => setIsTentative(e.target.checked)} 
+            <input
+              type="checkbox"
+              checked={isTentative}
+              onChange={e => setIsTentative(e.target.checked)}
             />
             סימן שאלה ❓
           </label>

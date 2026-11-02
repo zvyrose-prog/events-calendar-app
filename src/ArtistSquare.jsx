@@ -7,7 +7,7 @@ export default function ArtistSquare({
   scheduledEvents,
   onOpenEventModal,
   onToggleTentative,
-  onDeleteEvent
+  onDelete
 }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -57,18 +57,18 @@ export default function ArtistSquare({
 
       {/* חלון פרטי האירוע שנוצר */}
       <EventDetailsModal
-        isOpen={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
-        event={bookedEvent}
-        artist={artist}
-        onEdit={(eventToEdit) => {
-          setIsDetailsOpen(false); // סוגר את חלון הפרטים
-          onOpenEventModal(day.date, artist, eventToEdit); // פותח את טופס העריכה עם הנתונים המדויקים
-        }}
-        onDelete={(eventId) => {
-          onDeleteEvent(eventId);
-        }}
-      />
+  isOpen={isDetailsOpen}
+  onClose={() => setIsDetailsOpen(false)}
+  event={bookedEvent}
+  artist={artist}
+  onEdit={(eventToEdit) => {
+    setIsDetailsOpen(false);
+    onOpenEventModal(day.date, artist, eventToEdit);
+  }}
+  onDelete={(eventId) => {
+    if (onDelete) onDelete(eventId); // קורא לפונקציה הנכונה
+  }}
+/>
     </>
   );
 }

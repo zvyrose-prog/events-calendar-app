@@ -9,19 +9,19 @@ import AdvancesModal from './AdvancesModal';
 import LoginModal from './LoginModal';
 import { getEncryptionKey } from './cryptoUtils';
 import { exportEventsBackup } from './backupUtils';
-import { 
+import {
   subscribeToAuth,
   logoutCustomer,
-  subscribeToArtists, 
-  addArtistToFirestore, 
-  updateArtistInFirestore, 
+  subscribeToArtists,
+  addArtistToFirestore,
+  updateArtistInFirestore,
   deleteArtistFromFirestore,
-  subscribeToEvents, 
-  addEventToFirestore, 
-  updateEventInFirestore, 
+  subscribeToEvents,
+  addEventToFirestore,
+  updateEventInFirestore,
   deleteEventFromFirestore,
   subscribeToUserSettings,
-  saveUserSettingsToFirestore
+  saveUserSettings
 } from './firebaseService';
 import './App.css';
 
@@ -64,6 +64,17 @@ function App() {
   const [selectedArtistForEvent, setSelectedArtistForEvent] = useState(null); // שומר את האומן שלחצנו עליו
   const [isAdvancesOpen, setIsAdvancesOpen] = useState(false);
   const [whatsappTemplate, setWhatsappTemplate] = useState("");
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
+
+  const [editorsList, setEditorsList] = useState([]);
+  const [customFields, setCustomFields] = useState([]);
+
+  // States לחלוניות הניהול מתוך התפריט
+  const [isEditorsModalOpen, setIsEditorsModalOpen] = useState(false);
+  const [newEditorName, setNewEditorName] = useState('');
+
+  const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
+  const [newFieldTitle, setNewFieldTitle] = useState('');
 
   useEffect(() => {
     if (!currentUser) return;
@@ -78,6 +89,11 @@ function App() {
     });
 
     const unsubscribeSettings = subscribeToUserSettings(currentUser.uid, (settings) => {
+      console.log("📥 Loaded from Firebase:", settings); // <-- תוסיף את זה
+
+      setEditorsList(settings.editorsList || []);
+      setCustomFields(settings.customFields || []);
+
       if (settings.whatsappTemplate) {
         setWhatsappTemplate(settings.whatsappTemplate);
       } else {
@@ -85,40 +101,37 @@ function App() {
       }
     });
 
+    const unsubSettings = subscribeToUserSettings(currentUser.uid, (settings) => {
+      setEditorsList(settings.editorsList || []);
+      setCustomFields(settings.customFields || []);
+    });
+
     return () => {
       unsubscribeArtists();
       unsubscribeEvents();
       unsubscribeSettings();
+      unsubSettings();
     };
   }, [currentUser]);
 
+  // האזנה למצב ההתחברות של הלקוח ואיפוס/טעינת נתונים מקומיים
   useEffect(() => {
     const unsubscribeAuth = subscribeToAuth((user) => {
       if (user && !getEncryptionKey(user.uid)) {
-        // אם המשתמש מחובר מעבר ישן אבל עדיין אין לו מפתח הצפנה שמור במכשיר
-        logoutCustomer();
+        // המתנה קצרה למקרה שההתחברות כרגע בעיצומה ושמירת המפתח עדיין רצה
+        setTimeout(() => {
+          if (!getEncryptionKey(user.uid)) {
+            logoutCustomer();
+          } else {
+            setCurrentUser(user);
+            setAuthLoading(false);
+            const savedTentatives = localStorage.getItem(`calendar_tentatives_${user.uid}`);
+            setTentativeHolds(savedTentatives ? JSON.parse(savedTentatives) : []);
+          }
+        }, 300);
         return;
       }
 
-      setCurrentUser(user);
-      setAuthLoading(false);
-
-      if (user) {
-        const savedTentatives = localStorage.getItem(`calendar_tentatives_${user.uid}`);
-        setTentativeHolds(savedTentatives ? JSON.parse(savedTentatives) : []);
-      } else {
-        setArtists([]);
-        setScheduledEvents([]);
-        setTentativeHolds([]);
-        setIsArtistsLoaded(false);
-      }
-    });
-    return () => unsubscribeAuth();
-  }, []);
-
-  // 1. האזנה למצב ההתחברות של הלקוח ואיפוס/טעינת נתונים מקומיים
-  useEffect(() => {
-    const unsubscribeAuth = subscribeToAuth((user) => {
       setCurrentUser(user);
       setAuthLoading(false);
 
@@ -258,16 +271,28 @@ function App() {
 
   const toggleView = () => setIsHebrewView(!isHebrewView);
 
-  // פונקציה למחיקת אירוע מהענן של הלקוח
-  const handleDeleteEvent = async (eventId) => {
-    if (!currentUser) return;
-    if (window.confirm("האם אתה בטוח שברצונך למחוק את האירוע?")) {
-      try {
-        await deleteEventFromFirestore(currentUser.uid, eventId);
-      } catch (error) {
-        console.error("שגיאה במחיקת האירוע:", error);
-        alert("אירעה שגיאה בעת מחיקת האירוע.");
-      }
+  const handleDeleteEvent = async (eventOrId) => {
+    // תמיכה גם אם מועבר אובייקט אירוע שלם וגם אם מועבר רק ה-ID ישירות
+    const eventId = typeof eventOrId === 'object' ? (eventOrId.id || eventOrId._id) : eventOrId;
+
+    console.log("-> handleDeleteEvent started. Extracted eventId:", eventId);
+
+    if (!currentUser) {
+      alert("שגיאה: משתמש לא מחובר");
+      return;
+    }
+    if (!eventId) {
+      alert("שגיאה: מזהה האירוע ריק ולא ניתן למחוק");
+      return;
+    }
+
+    try {
+      await deleteEventFromFirestore(currentUser.uid, String(eventId));
+      console.log("-> האירוע נמחק בהצלחה מהענן!");
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error("שגיאה במחיקת האירוע:", error);
+      alert("אירעה שגיאה בעת מחיקת האירוע: " + error.message);
     }
   };
 
@@ -372,28 +397,51 @@ function App() {
       ) : (
         <>
           <header className="top-bar">
-            <div className="title-and-user">
-              <h1>לוח שנה אירועים</h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <button 
-                  onClick={() => exportEventsBackup(scheduledEvents, artists)} 
-                  style={{ 
-                    backgroundColor: '#0284c7', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: '14px', 
-                    padding: '3px 10px', 
-                    fontSize: '0.78rem', 
-                    fontWeight: 'bold', 
-                    cursor: 'pointer' 
-                  }}
-                  title="הורד גיבוי אקסל למכשיר"
-                >
-                  📥 גיבוי
-                </button>
-                <span className="logged-user-badge" dir="ltr" title={currentUser.email}>
-                  👤 {currentUser.email?.split('@')[0]}
-                </span>
+            <div className="title-and-user" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* כפתור 3 פסים (המבורגר) בצד ימין למעלה */}
+              <button
+                onClick={() => setIsSideMenuOpen(true)}
+                style={{
+                  backgroundColor: '#1e293b',
+                  color: '#fff',
+                  border: '1px solid #334155',
+                  borderRadius: '10px',
+                  padding: '8px 10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem',
+                  lineHeight: 1
+                }}
+                title="תפריט מערכת"
+              >
+                ☰
+              </button>
+
+              <div>
+                <h1>לוח שנה אירועים</h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    onClick={() => exportEventsBackup(scheduledEvents, artists)}
+                    style={{
+                      backgroundColor: '#0284c7',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '14px',
+                      padding: '3px 10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                    title="הורד גיבוי אקסל למכשיר"
+                  >
+                    📥 גיבוי
+                  </button>
+                  <span className="logged-user-badge" dir="ltr" title={currentUser.email}>
+                    👤 {currentUser.email?.split('@')[0]}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -413,17 +461,257 @@ function App() {
               <button className="view-toggle-btn" onClick={() => setShowWeekend(!showWeekend)} style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
                 {showWeekend ? "הסתר סופ\"ש" : "הצג סופ\"ש"}
               </button>
-              <button className="settings-btn" onClick={() => setIsArtistManagerOpen(true)} style={{ backgroundColor: '#334155' }}>
-                ⚙️ אומנים
-              </button>
               <button className="settings-btn" onClick={() => setIsAdvancesOpen(true)} style={{ backgroundColor: '#047857' }}>
                 💰 מקדמות
               </button>
-              <button className="settings-btn" onClick={logoutCustomer} style={{ backgroundColor: '#dc2626' }}>
-                🚪 צא
-              </button>
             </div>
           </header>
+
+          {/* מגירת תפריט צד נפתחת (Drawer) */}
+          {isSideMenuOpen && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(3px)',
+                zIndex: 9999,
+                display: 'flex',
+                justifyContent: 'flex-start'
+              }}
+              onClick={() => setIsSideMenuOpen(false)}
+            >
+              <div
+                dir="rtl"
+                style={{
+                  width: '280px',
+                  maxWidth: '80vw',
+                  height: '100%',
+                  backgroundColor: '#0f172a',
+                  borderLeft: '1px solid #1e293b',
+                  padding: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '-5px 0 25px rgba(0,0,0,0.5)',
+                  color: '#fff'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div>
+                  {/* כותרת התפריט וכפתור סגירה */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', marginBottom: '16px', borderBottom: '1px solid #1e293b' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>☰</span> תפריט מערכת
+                    </h3>
+                    <button
+                      onClick={() => setIsSideMenuOpen(false)}
+                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.2rem', cursor: 'pointer' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* סעיף 4 נמצא כאן: רשימת הפעולות בתפריט */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button
+                      onClick={() => {
+                        setIsSideMenuOpen(false);
+                        setIsArtistManagerOpen(true);
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 14px', backgroundColor: '#1e293b', color: '#f8fafc',
+                        border: '1px solid #334155', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'right'
+                      }}
+                    >
+                      <span>⚙️</span>
+                      <span>ניהול אומנים</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsSideMenuOpen(false);
+                        setIsEditorsModalOpen(true);
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 14px', backgroundColor: '#1e293b', color: '#f8fafc',
+                        border: '1px solid #334155', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'right'
+                      }}
+                    >
+                      <span>🎬</span>
+                      <span>ניהול עורכי וידאו</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsSideMenuOpen(false);
+                        setIsAddFieldModalOpen(true);
+                      }}
+                      style={{
+                        width: '100%', padding: '12px 14px', backgroundColor: '#1e293b', color: '#f8fafc',
+                        border: '1px solid #334155', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'right'
+                      }}
+                    >
+                      <span>➕</span>
+                      <span>הוסף שדה</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* תחתית התפריט - כפתור התנתקות ופרטי משתמש */}
+                <div style={{ paddingTop: '16px', borderTop: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <button
+                    onClick={() => {
+                      setIsSideMenuOpen(false);
+                      logoutCustomer();
+                    }}
+                    style={{
+                      width: '100%', padding: '12px 14px', backgroundColor: 'rgba(220, 38, 38, 0.15)', color: '#f87171',
+                      border: '1px solid rgba(220, 38, 38, 0.3)', borderRadius: '10px', fontSize: '0.95rem', fontWeight: 'bold',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', textAlign: 'right'
+                    }}
+                  >
+                    <span>🚪</span>
+                    <span>התנתקות</span>
+                  </button>
+
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', textAlign: 'center' }}>
+                    מחובר כ: {currentUser.email}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* סעיף 5 נמצא כאן (מחוץ לתפריט): חלונית ניהול עורכי וידאו */}
+          {isEditorsModalOpen && (
+            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setIsEditorsModalOpen(false)}>
+              <div dir="rtl" style={{ backgroundColor: '#1e293b', color: '#fff', padding: '24px', borderRadius: '14px', width: '360px', maxWidth: '90vw', border: '1px solid #334155' }} onClick={e => e.stopPropagation()}>
+                <h3 style={{ marginTop: 0, marginBottom: '16px' }}>🎬 רשימת עורכי/ות וידאו</h3>
+
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  <input
+                    type="text"
+                    placeholder="שם עורך/ת חדש..."
+                    value={newEditorName}
+                    onChange={(e) => setNewEditorName(e.target.value)}
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#fff' }}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!newEditorName.trim()) return;
+                      const updated = [...editorsList, { id: Date.now().toString(), name: newEditorName.trim() }];
+                      await saveUserSettings(currentUser.uid, {
+                        editorsList: updated,
+                        customFields: customFields
+                      });
+                      setNewEditorName('');
+                    }}
+                    style={{ padding: '8px 14px', backgroundColor: '#0284c7', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    הוסף
+                  </button>
+                </div>
+
+                <div style={{ maxHeight: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {editorsList.length === 0 ? (
+                    <p style={{ color: '#94a3b8', fontSize: '0.9rem', textAlign: 'center' }}>עדיין לא הוגדרו עורכים. הוסף למעלה!</p>
+                  ) : (
+                    editorsList.map(ed => (
+                      <div key={ed.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f172a', padding: '8px 12px', borderRadius: '8px' }}>
+                        <span>{ed.name}</span>
+                        <button
+                          onClick={async () => {
+                            const updated = editorsList.filter(item => item.id !== ed.id);
+                            await saveUserSettings(currentUser.uid, {
+                              editorsList: updated,
+                              customFields: customFields
+                            });
+                          }}
+                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem' }}
+                          title="מחק"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <button onClick={() => setIsEditorsModalOpen(false)} style={{ marginTop: '18px', width: '100%', padding: '10px', backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  סגור
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* חלונית "הוסף שדה" לפרטי אירוע */}
+          {isAddFieldModalOpen && (
+            <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setIsAddFieldModalOpen(false)}>
+              <div dir="rtl" style={{ backgroundColor: '#1e293b', color: '#fff', padding: '24px', borderRadius: '14px', width: '360px', maxWidth: '90vw', border: '1px solid #334155' }} onClick={e => e.stopPropagation()}>
+                <h3 style={{ marginTop: 0, marginBottom: '12px' }}>➕ הוסף שדה לפרטי אירוע</h3>
+
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: '#cbd5e1' }}>הכנס כותרת:</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  <input
+                    type="text"
+                    placeholder="למשל: מספר מוזמנים / ציוד נוסף"
+                    value={newFieldTitle}
+                    onChange={(e) => setNewFieldTitle(e.target.value)}
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #475569', backgroundColor: '#0f172a', color: '#fff' }}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!newFieldTitle.trim()) return;
+                      const newField = { id: 'field_' + Date.now(), label: newFieldTitle.trim() };
+                      const updated = [...customFields, newField];
+                      // שומרים גם את השדות המעודכנים וגם את רשימת העורכים הקיימת יחד!
+                      await saveUserSettings(currentUser.uid, {
+                        customFields: updated,
+                        editorsList: editorsList
+                      });
+                      setNewFieldTitle('');
+                    }}
+                    style={{ padding: '8px 14px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    שמור
+                  </button>
+                </div>
+
+                {customFields.length > 0 && (
+                  <div style={{ marginTop: '12px', borderTop: '1px solid #334155', paddingTop: '12px' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '8px' }}>שדות קיימים שהוספת:</div>
+                    <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {customFields.map(f => (
+                        <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f172a', padding: '6px 10px', borderRadius: '6px', fontSize: '0.9rem' }}>
+                          <span>{f.label}</span>
+                          <button
+                            onClick={async () => {
+                              const updated = customFields.filter(item => item.id !== f.id);
+                              await saveUserSettings(currentUser.uid, {
+                                customFields: updated,
+                                editorsList: editorsList
+                              });
+                            }}
+                            style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={() => setIsAddFieldModalOpen(false)} style={{ marginTop: '18px', width: '100%', padding: '10px', backgroundColor: '#334155', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  סגור
+                </button>
+              </div>
+            </div>
+          )}
 
           <main className="calendar-wrapper">
             <div className="calendar-header" style={{ gridTemplateColumns: showWeekend ? 'repeat(7, 1fr)' : 'repeat(5, 1fr)' }}>
@@ -541,6 +829,8 @@ function App() {
               prefilledArtist={selectedArtistForEvent}
               existingEvent={editingEvent}
               artists={artists}
+              editorsList={editorsList}
+              customFields={customFields}
             />
           )}
 
@@ -549,8 +839,8 @@ function App() {
             onClose={() => setIsAdvancesOpen(false)}
             scheduledEvents={scheduledEvents}
             whatsappTemplate={whatsappTemplate}
-            onSaveTemplate={(newText) => 
-              saveUserSettingsToFirestore(currentUser.uid, { whatsappTemplate: newText })
+            onSaveTemplate={(newText) =>
+              saveUserSettings(currentUser.uid, { whatsappTemplate: newText })
             }
             onMarkPaid={(ev) => {
               updateEventInFirestore(currentUser.uid, ev.id, {
