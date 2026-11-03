@@ -60,9 +60,7 @@ export default function AddArtistModal({ isOpen, onClose, onSave, existingArtist
       phone: phone.trim(), 
       color: activeColor,
       // אם זה אומן קיים נשמור על המיקום שלו, ואם הוא חדש ניתן לו את הזמן הנוכחי כדי שייכנס בסוף!
-      createdAt: existingArtist?.createdAt || Date.now()
-
-      // createdAt: existingArtist ? (existingArtist.createdAt ?? 0) : Date.now()
+      createdAt: existingArtist ? (existingArtist.createdAt ?? 0) : Date.now()
     });
     
     setName("");
