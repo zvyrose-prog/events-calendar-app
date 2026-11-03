@@ -30,7 +30,7 @@ export default function ArtistManager({ isOpen, onClose, artists, onDelete, onAd
             <div key={artist.id} className="artist-list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #eee' }}>
               <div className="artist-info">
                 <span className="artist-color-dot" style={{ backgroundColor: artist.color, display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', marginLeft: '8px' }}></span>
-                <strong>{artist.name}</strong> ({artist.role}) <br/>
+                <strong>{artist.name}</strong> {artist.role} <br/>
                 <small style={{color: '#666', fontSize: '0.8rem'}}>
                   📞 {artist.phone || 'לא הוזן'} | 🔑 {artist.password || 'לא הוזן'}
                 </small>

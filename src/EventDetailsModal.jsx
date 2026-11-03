@@ -108,7 +108,7 @@ export default function EventDetailsModal({ isOpen, onClose, event, artist, onEd
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content event-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>פרטי אירוע - {artist.name} ({artist.role})</h3>
+        <h3>פרטי אירוע - {artist.name} {artist.role}</h3>
 
         <div style={{ margin: '15px 0', lineHeight: '1.8', fontSize: '1.05rem' }}>
           <p><strong>📅 תאריך:</strong> {formattedDateDisplay}</p>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HDate, HebrewCalendar } from '@hebcal/core';
 import ArtistManager from './ArtistManager';
 import AddArtistModal from './AddArtistModal';
@@ -9,6 +9,7 @@ import AdvancesModal from './AdvancesModal';
 import LoginModal from './LoginModal';
 import { getEncryptionKey } from './cryptoUtils';
 import { exportEventsBackup } from './backupUtils';
+
 import {
   subscribeToAuth,
   logoutCustomer,
@@ -75,6 +76,82 @@ function App() {
 
   const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
   const [newFieldTitle, setNewFieldTitle] = useState('');
+
+// בדיקה האם יש כרגע איזשהו חלון או תפריט פתוח באפליקציה
+// בדיקה האם יש כרגע איזשהו חלון או תפריט פתוח באפליקציה
+  const isAnyOverlayOpen = Boolean(
+    isAddArtistOpen ||
+    isEventModalOpen ||
+    selectedEvent ||
+    isEditorsModalOpen ||
+    isAddFieldModalOpen ||
+    isAdvancesOpen ||
+    isArtistManagerOpen ||
+    isSideMenuOpen
+  );
+
+  // שמירת פונקציית הסגירה העדכנית ביותר לפי סדר עדיפויות (בתוך useEffect כפי ש-React דורש)
+  const closeTopOverlayRef = useRef(null);
+  useEffect(() => {
+    closeTopOverlayRef.current = () => {
+      if (isAddArtistOpen) setIsAddArtistOpen(false);
+      else if (isEventModalOpen) setIsEventModalOpen(false);
+      else if (selectedEvent) setSelectedEvent(null);
+      else if (isEditorsModalOpen) setIsEditorsModalOpen(false);
+      else if (isAddFieldModalOpen) setIsAddFieldModalOpen(false);
+      else if (isAdvancesOpen) setIsAdvancesOpen(false);
+      else if (isArtistManagerOpen) setIsArtistManagerOpen(false);
+      else if (isSideMenuOpen) setIsSideMenuOpen(false);
+    };
+  });
+
+  useEffect(() => {
+    if (!isAnyOverlayOpen) return;
+
+    // כשנפתח חלון - דוחפים מצב דמה להיסטוריה של הדפדפן באנדרואיד
+    window.history.pushState({ modalOpen: true }, '');
+
+    const handlePopState = () => {
+      // כשהמשתמש לוחץ על כפתור "חזור" בטלפון - סוגרים את החלון הפתוח
+      if (closeTopOverlayRef.current) {
+        closeTopOverlayRef.current();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      if (window.history.state?.modalOpen) {
+        window.history.back();
+      }
+    };
+  }, [isAnyOverlayOpen]);
+
+  useEffect(() => {
+    if (!isAnyOverlayOpen) return;
+
+    // כשנפתח חלון - דוחפים מצב דמה להיסטוריה של הדפדפן באנדרואיד
+    window.history.pushState({ modalOpen: true }, '');
+
+    const handlePopState = () => {
+      // כשהמשתמש לוחץ על כפתור "חזור" בטלפון - סוגרים את החלון הפתוח
+      if (closeTopOverlayRef.current) {
+        closeTopOverlayRef.current();
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      // אם המשתמש סגר את החלון דרך כפתור ה"סגור" במסך (ולא דרך כפתור החזור של הטלפון),
+      // ננקה את שכבת ההיסטוריה שהוספנו כדי שלחיצה עתידית על "חזור" לא תדרוש שתי לחיצות
+      if (window.history.state?.modalOpen) {
+        window.history.back();
+      }
+    };
+  }, [isAnyOverlayOpen]);
 
   useEffect(() => {
     if (!currentUser) return;

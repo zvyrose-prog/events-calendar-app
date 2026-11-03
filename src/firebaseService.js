@@ -78,7 +78,9 @@ export const subscribeToArtists = (uid, callback) => {
   return onSnapshot(userArtistsRef, (snapshot) => {
     const artistsData = snapshot.docs
       .map(docSnap => decryptObjectData(uid, docSnap.id, docSnap.data()))
-      .filter(item => !item._decryptionFailed);
+      .filter(item => !item._decryptionFailed)
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); // מיון מהישן לחדש (החדש נכנס למטה)
+      
     callback(artistsData);
   });
 };
@@ -86,11 +88,18 @@ export const subscribeToArtists = (uid, callback) => {
 // הוספת אומן חדש (מוצפן) לתיקיית הלקוח
 export const addArtistToFirestore = async (uid, artistData) => {
   const userArtistsRef = collection(db, "users", uid, "artists");
-  const encryptedData = encryptObjectData(uid, artistData);
+  
+  // מוודא שתמיד תהיה חותמת זמן ליצירה לטובת המיון
+  const dataWithTimestamp = {
+    ...artistData,
+    createdAt: artistData.createdAt || Date.now()
+  };
+
+  const encryptedData = encryptObjectData(uid, dataWithTimestamp);
   return await addDoc(userArtistsRef, encryptedData);
 };
 
-// עדכון אומן קיים (מוצפן) של הלקוח
+// עדכון אומן קיים (מוצפן) של הלקוח - נשאר בדיוק כמו אצלך
 export const updateArtistInFirestore = async (uid, artistId, artistData) => {
   const artistRef = doc(db, "users", uid, "artists", String(artistId));
   
